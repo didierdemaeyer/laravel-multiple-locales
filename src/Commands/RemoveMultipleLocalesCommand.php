@@ -50,15 +50,19 @@ class RemoveMultipleLocalesCommand extends Command
         $bar->start();
 
         // Variables
-        $localesString = "'locale' => 'en',
+        $oldLocalesString = "'locale' => 'en',
     'locales' => ['en' => 'English', 'nl' => 'Dutch'],
     'skip_locales' => ['admin', 'api'],";
+        $newLocalesString = "'locale' => 'en',";
         $pathRouteServiceProvider = __DIR__.'/../Providers/RouteServiceProvider.php';
         $pathLanguageMiddleware = __DIR__.'/../Middleware/Language.php';
         $kernelString = "protected \$middleware = [
         \\App\\Http\\Middleware\\Language::class,";
 
-        //
+        // Remove the 'locales' and 'skip_locales' arrays from config/app.php
+        $this->info("Removing the 'locales' and the 'skip_locales' arrays from config/app.php");
+        $this->helper->replaceAndSave(getcwd().'/config/app.php', "'locale' => 'en',", $oldLocalesString, $newLocalesString);
+        $bar->advance();
 
         $this->output->newLine(1);
     }
