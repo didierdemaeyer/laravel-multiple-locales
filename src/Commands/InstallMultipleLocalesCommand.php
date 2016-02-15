@@ -41,12 +41,6 @@ class InstallMultipleLocalesCommand extends Command
      */
     public function handle()
     {
-        $this->output->newLine(1);
-
-        // Start the progress bar
-        $bar = $this->helper->barSetup($this->output->createProgressBar(5));
-        $bar->start();
-
         // Variables
         $localesString = "'locale' => 'en',
     'locales' => ['en' => 'English', 'nl' => 'Dutch'],
@@ -55,6 +49,21 @@ class InstallMultipleLocalesCommand extends Command
         $pathLanguageMiddleware = __DIR__.'/../Middleware/Language.php';
         $kernelString = "protected \$middleware = [
         \\App\\Http\\Middleware\\Language::class,";
+
+        // If the user has multiple locales installed
+        if (file_exists(__DIR__.'/../Providers/Original/RouteServiceProvider.php')) {
+            $this->output->newLine(1);
+            $this->error('The multiple locales package is already installed!');
+            $this->output->newLine(1);
+
+            return true;
+        }
+
+        $this->output->newLine(1);
+
+        // Start the progress bar
+        $bar = $this->helper->barSetup($this->output->createProgressBar(5));
+        $bar->start();
 
         // Add the 'locales' and 'skip_locales' to config/app.php
         $this->info("Adding 'locales' and 'skip_locales' to config/app.php");

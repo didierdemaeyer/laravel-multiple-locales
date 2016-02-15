@@ -88,4 +88,9 @@ class MultipleLocalesHelper
     {
         $this->files->makeDirectory($path);
     }
+
+    public function removeDir($path)
+    {
+        $this->files->deleteDirectory($path);
+    }
 }

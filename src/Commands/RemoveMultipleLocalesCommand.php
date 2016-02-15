@@ -52,7 +52,7 @@ class RemoveMultipleLocalesCommand extends Command
         \\App\\Http\\Middleware\\Language::class,";
         $newKernelString = "protected \$middleware = [";
 
-        // If the user has multiple locales installed
+        // If the user does not have multiple locales installed
         if ( ! file_exists($pathRouteServiceProvider)) {
             $this->output->newLine(1);
             $this->error('The multiple locales package is not installed!');
@@ -75,6 +75,7 @@ class RemoveMultipleLocalesCommand extends Command
         // Setting the old RouteServiceProvider
         $this->info("Replacing the RouteServiceProvider with the old one...");
         $this->helper->moveFile($pathRouteServiceProvider, app_path('Providers/RouteServiceProvider.php'));
+        $this->helper->removeDir(__DIR__.'/../Providers/Original');
         $bar->advance();
 
         // Delete the Language middleware
