@@ -63,6 +63,7 @@ class InstallMultipleLocalesCommand extends Command
 
         // Saving the user's RouteServiceProvider
         $this->info('Saving your RouteServiceProvider...');
+        $this->helper->makeDir(__DIR__.'/../Providers/Original');   // make the directory if it doesn't exist
         $this->helper->copyFile(app_path('Providers/RouteServiceProvider.php'), __DIR__.'/../Providers/Original/RouteServiceProvider.php');
         $bar->advance();
 

@@ -55,7 +55,7 @@ class RemoveMultipleLocalesCommand extends Command
         // If the user has multiple locales installed
         if ( ! file_exists($pathRouteServiceProvider)) {
             $this->output->newLine(1);
-            $this->error('Package must be installed to remove it!');
+            $this->error('The multiple locales package is not installed!');
             $this->output->newLine(1);
 
             return true;
