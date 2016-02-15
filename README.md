@@ -36,11 +36,9 @@ Now add the package to the `'providers'` array in `config/app.php` as follows:
 ],
 ```
 
-### Step 3: Running the install command
+### Step 3: Install and setup your locales
 
 Run `php artisan multiple-locales:install` to install the package.
-
-If you want to remove the package, run: `php artisan multiple-locales:remove`.
 
 Add the necessary `locales` and `skip_locales` in `config/app.php`:
 
@@ -50,3 +48,7 @@ Add the necessary `locales` and `skip_locales` in `config/app.php`:
 ```
 
 That's it! Go translate!
+
+<br />
+
+If you want to remove the package, just run: `php artisan multiple-locales:remove` and it will remove the published code from your package and reset your `RouteServiceProvider.php`.
