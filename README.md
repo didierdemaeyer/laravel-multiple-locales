@@ -7,7 +7,7 @@ Routes that don't need a locale prefix can be added to the `'skip_locales'` arra
 
 ### Step 1: Cloning the package
 
-To begin you have to clone the [Laravel Multiple Locales package](https://github.com/didierdemaeyer/laravel-multiple-locales) in `packages/DidierDeMaeyer/LaravelMultipleLocales/`.
+To begin you have to clone the Laravel Multiple Locales package in `packages/DidierDeMaeyer/LaravelMultipleLocales/`.
 
 ### Step 2: Registering the package
 
