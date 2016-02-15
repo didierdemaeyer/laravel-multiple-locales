@@ -73,4 +73,9 @@ class MultipleLocalesHelper
     {
         $this->files->copy($path, $target);
     }
+
+    public function deleteFile($path)
+    {
+        $this->files->delete($path);
+    }
 }

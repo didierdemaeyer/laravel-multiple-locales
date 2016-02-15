@@ -19,7 +19,7 @@ class InstallMultipleLocalesCommand extends Command
      *
      * @var string
      */
-    protected $description = 'Install the Laravel Multiple Locales package.';
+    protected $description = 'Install the Laravel Multiple Locales package';
 
     /**
      * Helper class.
@@ -81,9 +81,9 @@ class InstallMultipleLocalesCommand extends Command
         $this->helper->replaceAndSave(getcwd().'/app/Http/Kernel.php', "protected \$middleware = [", $kernelString);
         $bar->advance();
 
-        // Finished adding multiple locales
+        // Finished adding multiple locales to your project
         $bar->finish();
-        $this->info('Finished adding multiple locales.');
+        $this->info('Finished adding multiple locales to your project.');
 
         $this->output->newLine(1);
     }
