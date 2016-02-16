@@ -63,6 +63,14 @@ class MultipleLocalesHelper
         $this->files->put($newFile, $replacing);
     }
 
+    public function pregReplaceAndSave($oldFile, $pattern, $replacement, $newFile = null)
+    {
+        $newFile = ($newFile == null) ? $oldFile : $newFile;
+        $file = $this->files->get($oldFile);
+        $replacing = preg_replace($pattern, $replacement, $file);
+        $this->files->put($newFile, $replacing);
+    }
+
     /**
      * Move a file.
      *

@@ -41,17 +41,32 @@ class InstallMultipleLocalesCommand extends Command
      */
     public function handle()
     {
-        // Variables
-        $localesString = "'locale' => 'en',
+        // Config variables
+        $pathAppConfig = getcwd() . '/config/app.php';
+        $oldLocaleString = "'locale' => 'en',";
+        $newLocalesString = "'locale' => 'en',
     'locales' => ['en' => 'English', 'nl' => 'Dutch'],
     'skip_locales' => ['admin', 'api'],";
-        $pathRouteServiceProvider = __DIR__.'/../Providers/RouteServiceProvider.php';
-        $pathLanguageMiddleware = __DIR__.'/../Middleware/Language.php';
-        $kernelString = "protected \$middleware = [
+
+        // Providers Variables
+        $pathPackageRouteServiceProvider = __DIR__ . '/../Providers/RouteServiceProvider.php';
+        $pathProjectRouteServiceProvider = app_path('Providers/RouteServiceProvider.php');
+
+        // Middleware variables
+        $pathOriginalProviders = __DIR__ . '/../Providers/Original';
+        $pathOriginalRouteServiceProvider = __DIR__ . '/../Providers/Original/RouteServiceProvider.php';
+        $pathPackageLanguageMiddleware = __DIR__ . '/../Middleware/Language.php';
+        $pathProjectLanguageMiddleware = app_path('Http/Middleware/Language.php');
+
+        // Kernel variables
+        $pathKernel = getcwd() . '/app/Http/Kernel.php';
+        $oldKernelString = "protected \$middleware = [";
+        $newKernelString = "protected \$middleware = [
         \\App\\Http\\Middleware\\Language::class,";
 
+
         // If the user has multiple locales installed
-        if (file_exists(__DIR__.'/../Providers/Original/RouteServiceProvider.php')) {
+        if (file_exists($pathOriginalRouteServiceProvider)) {
             $this->output->newLine(1);
             $this->error('The multiple locales package is already installed!');
             $this->output->newLine(1);
@@ -67,28 +82,28 @@ class InstallMultipleLocalesCommand extends Command
 
         // Add the 'locales' and 'skip_locales' to config/app.php
         $this->info("Adding 'locales' and 'skip_locales' to config/app.php");
-        $this->helper->replaceAndSave(getcwd().'/config/app.php', "'locale' => 'en',", $localesString);
+        $this->helper->replaceAndSave($pathAppConfig, $oldLocaleString, $newLocalesString);
         $bar->advance();
 
         // Saving the user's RouteServiceProvider
         $this->info('Saving your RouteServiceProvider...');
-        $this->helper->makeDir(__DIR__.'/../Providers/Original');   // make the directory if it doesn't exist
-        $this->helper->copyFile(app_path('Providers/RouteServiceProvider.php'), __DIR__.'/../Providers/Original/RouteServiceProvider.php');
+        $this->helper->makeDir($pathOriginalProviders);   // make the directory if it doesn't exist
+        $this->helper->copyFile($pathProjectRouteServiceProvider, $pathOriginalRouteServiceProvider);
         $bar->advance();
 
         // Replace the RouteServiceProvider
         $this->info('Replacing RouteServiceProvider...');
-        $this->helper->copyFile($pathRouteServiceProvider, app_path('Providers/RouteServiceProvider.php'));
+        $this->helper->copyFile($pathPackageRouteServiceProvider, $pathProjectRouteServiceProvider);
         $bar->advance();
 
         // Add the Language middleware
         $this->info('Adding Language middelware...');
-        $this->helper->copyFile($pathLanguageMiddleware, app_path('Http/Middleware/Language.php'));
+        $this->helper->copyFile($pathPackageLanguageMiddleware, $pathProjectLanguageMiddleware);
         $bar->advance();
 
         // Add the Language middleware to the Kernel for all requests
         $this->info('Adding Language middleware to app/Http/Kernel.php ...');
-        $this->helper->replaceAndSave(getcwd().'/app/Http/Kernel.php', "protected \$middleware = [", $kernelString);
+        $this->helper->replaceAndSave($pathKernel, $oldKernelString, $newKernelString);
         $bar->advance();
 
         // Finished adding multiple locales to your project

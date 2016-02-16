@@ -41,19 +41,30 @@ class RemoveMultipleLocalesCommand extends Command
      */
     public function handle()
     {
-        // Variables
-        $oldLocalesString = "'locale' => 'en',
-    'locales' => ['en' => 'English', 'nl' => 'Dutch'],
-    'skip_locales' => ['admin', 'api'],";
-        $newLocalesString = "'locale' => 'en',";
-        $pathRouteServiceProvider = __DIR__ . '/../Providers/Original/RouteServiceProvider.php';
+        // Config variables
+        $pathAppConfig = getcwd() . '/config/app.php';
+        $regexLocalesString = "/'locales' => \[.*],/";
+        $newLocalesString = "";
+        $regexSkipLocalesString = "/'skip_locales' => \[.*],/";
+        $newSkipLocalesString = "";
+
+        // Providers variables
+        $pathOriginalProviders = __DIR__ . '/../Providers/Original';
+        $pathOriginalRouteServiceProvider = __DIR__ . '/../Providers/Original/RouteServiceProvider.php';
+        $pathProjectRouteServiceProvider = app_path('Providers/RouteServiceProvider.php');
+
+        // Middleware variables
         $pathLanguageMiddleware = app_path('Http/Middleware/Language.php');
-        $oldKernelString = "protected \$middleware = [
+
+        // Kernel variables
+        $pathKernel = getcwd() . '/app/Http/Kernel.php';
+        $oldKernelString = "
         \\App\\Http\\Middleware\\Language::class,";
-        $newKernelString = "protected \$middleware = [";
+        $newKernelString = "";
+
 
         // If the user does not have multiple locales installed
-        if ( ! file_exists($pathRouteServiceProvider)) {
+        if ( ! file_exists($pathOriginalRouteServiceProvider)) {
             $this->output->newLine(1);
             $this->error('The multiple locales package is not installed!');
             $this->output->newLine(1);
@@ -69,13 +80,15 @@ class RemoveMultipleLocalesCommand extends Command
 
         // Remove the 'locales' and 'skip_locales' arrays from config/app.php
         $this->info("Removing the 'locales' and the 'skip_locales' arrays from config/app.php");
-        $this->helper->replaceAndSave(getcwd() . '/config/app.php', $oldLocalesString, $newLocalesString);
+        $this->helper->pregReplaceAndSave($pathAppConfig, $regexLocalesString, $newLocalesString);
+        $this->helper->pregReplaceAndSave($pathAppConfig, $regexSkipLocalesString, $newSkipLocalesString);
         $bar->advance();
 
         // Setting the old RouteServiceProvider
         $this->info("Replacing the RouteServiceProvider with the old one...");
-        $this->helper->moveFile($pathRouteServiceProvider, app_path('Providers/RouteServiceProvider.php'));
-        $this->helper->removeDir(__DIR__.'/../Providers/Original');
+        $this->helper->moveFile($pathOriginalRouteServiceProvider, $pathProjectRouteServiceProvider);
+        $this->helper->removeDir($pathOriginalProviders);
+        $this->helper->replaceAndSave($pathProjectRouteServiceProvider, "", "");    // without saving the RouteServiceProvider was not registered
         $bar->advance();
 
         // Delete the Language middleware
@@ -85,7 +98,7 @@ class RemoveMultipleLocalesCommand extends Command
 
         // Remove the Language middleware from the Kernel
         $this->info("Removing the Language middleware from the Kernel...");
-        $this->helper->replaceAndSave(getcwd() . '/app/Http/Kernel.php', $oldKernelString, $newKernelString);
+        $this->helper->replaceAndSave($pathKernel, $oldKernelString, $newKernelString);
         $bar->advance();
 
         // Finished removing multiple locales from your project
