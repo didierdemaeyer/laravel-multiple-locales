@@ -34,7 +34,7 @@ class Language
         }
 
         // If the locale does not exist in the locales array continue with the fallback_locale
-        if ( ! array_key_exists($locale, $this->app->config->get('app.locales')) && $locale != 'admin') {
+        if ( ! array_key_exists($locale, $this->app->config->get('app.locales'))) {
             $segments = $request->segments();
             $segments[0] = $this->app->config->get('app.fallback_locale');
 
