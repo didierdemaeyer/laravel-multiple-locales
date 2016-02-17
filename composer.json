@@ -27,5 +27,6 @@
         "psr-4": {
             "DidierDeMaeyer\\LaravelMultipleLocales\\": "src/"
         }
-    }
+    },
+    "minimum-stability": "dev"
 }
