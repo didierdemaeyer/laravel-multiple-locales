@@ -1,4 +1,4 @@
-# Laravel Multiple Locales: Further Development
+# Laravel Multiple Locales
 
 This Laravel package will make `domain.com/{locale}` available to your website.
 Routes that don't need a locale prefix can be added to the `'skip_locales'` array in `config/app.php`.
@@ -10,7 +10,7 @@ Routes that don't need a locale prefix can be added to the `'skip_locales'` arra
 Require the package using composer:
 
 ```bash
-composer require didierdemaeyer/laravel-multiple-locales "0.1.*"
+composer require didierdemaeyer/laravel-multiple-locales "1.*"
 ```
 
 ### Step 2: Register the package
@@ -28,7 +28,7 @@ Add the package to the `'providers'` array in `config/app.php`:
 
 Run `php artisan multiple-locales:install` to install the package.
 
-Add the necessary `locales` and `skip_locales` in `config/app.php`:
+Update the `locales` and `skip_locales` array with your locales in `config/app.php`:
 
 ```php
 'locales' => ['en' => 'English', 'nl' => 'Dutch'],
