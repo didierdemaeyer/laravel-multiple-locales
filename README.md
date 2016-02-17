@@ -1,6 +1,6 @@
 # Laravel Multiple Locales
 
-This Laravel package will make `domain.com/{locale}` available to your website.
+This Laravel package will make `domain.com/{locale}/your/routes` available to your website.
 Routes that don't need a locale prefix can be added to the `'skip_locales'` array in `config/app.php`.
 
 ## Installation
@@ -35,7 +35,7 @@ Update the `locales` and `skip_locales` array with your locales in `config/app.p
 'skip_locales' => ['admin', 'api'],
 ```
 
-That's it! Go translate!
+And you're done! Happy translating!
 
 <br />
 
