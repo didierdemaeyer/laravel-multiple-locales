@@ -25,8 +25,7 @@
     },
     "autoload": {
         "psr-4": {
-            "DidierDeMaeyer\\MultipleLocales\\": "src/"
+            "DidierDeMaeyer\\LaravelMultipleLocales\\": "src/"
         }
-    },
-    "minimum-stability": "stable"
+    }
 }
