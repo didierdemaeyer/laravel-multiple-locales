@@ -28,10 +28,70 @@ class InstallMultipleLocalesCommand extends Command
      */
     protected $helper;
 
+    /**
+     * @var object
+     */
+    protected $config;
+
+    /**
+     * @var object
+     */
+    private $bar;
+
+    /**
+     * @var string
+     */
+    private $pathPackageRouteServiceProvider;
+
+    /**
+     * @var string
+     */
+    private $pathPackageLanguageMiddleware;
+
+    /**
+     * @var string
+     */
+    private $pathOriginalProviders;
+
+    /**
+     * @var string
+     */
+    private $pathOriginalRouteServiceProvider;
+
+    /**
+     * @var string
+     */
+    protected $oldLocalesString = "'locale' => 'en',";
+
+    /**
+     * @var string
+     */
+    protected $newLocalesString = "'locale' => 'en',
+    'locales' => ['en' => 'English', 'nl' => 'Dutch'],
+    'skip_locales' => ['admin', 'api'],";
+
+    /**
+     * @var string
+     */
+    protected $oldKernelString = "protected \$middleware = [";
+
+    /**
+     * @var string
+     */
+    protected $newKernelString = "protected \$middleware = [
+        \\App\\Http\\Middleware\\Language::class,";
+
     public function __construct(MultipleLocalesHelper $helper)
     {
         parent::__construct();
+
         $this->helper = $helper;
+        $this->config = json_decode(json_encode(config('multiple-locales')));
+
+        $this->pathPackageRouteServiceProvider = __DIR__ . '/../Providers/RouteServiceProvider.php';
+        $this->pathPackageLanguageMiddleware = __DIR__ . '/../Middleware/Language.php';
+        $this->pathOriginalProviders = __DIR__ . '/../Providers/Original';
+        $this->pathOriginalRouteServiceProvider = __DIR__ . '/../Providers/Original/RouteServiceProvider.php';
     }
 
     /**
@@ -41,75 +101,133 @@ class InstallMultipleLocalesCommand extends Command
      */
     public function handle()
     {
-        // Config variables
-        $pathAppConfig = getcwd() . '/config/app.php';
-        $oldLocaleString = "'locale' => 'en',";
-        $newLocalesString = "'locale' => 'en',
-    'locales' => ['en' => 'English', 'nl' => 'Dutch'],
-    'skip_locales' => ['admin', 'api'],";
+        // If the package is already installed, abort installation
+        if ($this->packageIsInstalled()) {
+            return $this->abortInstallation();
+        }
 
-        // Providers Variables
-        $pathPackageRouteServiceProvider = __DIR__ . '/../Providers/RouteServiceProvider.php';
-        $pathProjectRouteServiceProvider = app_path('Providers/RouteServiceProvider.php');
+        $this->startProgressBar();
 
-        // Middleware variables
-        $pathOriginalProviders = __DIR__ . '/../Providers/Original';
-        $pathOriginalRouteServiceProvider = __DIR__ . '/../Providers/Original/RouteServiceProvider.php';
-        $pathPackageLanguageMiddleware = __DIR__ . '/../Middleware/Language.php';
-        $pathProjectLanguageMiddleware = app_path('Http/Middleware/Language.php');
+        $this->addConfigArrays();
+        $this->saveOriginalRouteServiceProvider();
+        $this->replaceRouteServiceProvider();
+        $this->addLanguageMiddleware();
+        $this->registerLanguageMiddleware();
 
-        // Kernel variables
-        $pathKernel = getcwd() . '/app/Http/Kernel.php';
-        $oldKernelString = "protected \$middleware = [";
-        $newKernelString = "protected \$middleware = [
-        \\App\\Http\\Middleware\\Language::class,";
+        $this->stopProgressBar();
+    }
 
-
-        // If the user has multiple locales installed
-        if (file_exists($pathOriginalRouteServiceProvider)) {
-            $this->output->newLine(1);
-            $this->error('The multiple locales package is already installed!');
-            $this->output->newLine(1);
+    /**
+     * Check if the package is currently installed.
+     *
+     * @return bool
+     */
+    private function packageIsInstalled()
+    {
+        if (file_exists($this->pathOriginalRouteServiceProvider)) {
 
             return true;
         }
 
+        return false;
+    }
+
+    /**
+     * Abort the package installation.
+     *
+     * @return bool
+     */
+    private function abortInstallation()
+    {
+        $this->output->newLine(1);
+        $this->error('The multiple locales package is already installed!');
         $this->output->newLine(1);
 
-        // Start the progress bar
-        $bar = $this->helper->barSetup($this->output->createProgressBar(5));
-        $bar->start();
+        return true;
+    }
 
-        // Add the 'locales' and 'skip_locales' to config/app.php
-        $this->info("Adding 'locales' and 'skip_locales' to config/app.php");
-        $this->helper->replaceAndSave($pathAppConfig, $oldLocaleString, $newLocalesString);
-        $bar->advance();
+    /**
+     * Start the progress bar.
+     *
+     * @return void
+     */
+    private function startProgressBar()
+    {
+        $this->output->newLine(1);
+        $this->bar = $this->helper->barSetup($this->output->createProgressBar(5));
+        $this->bar->start();
+    }
 
-        // Saving the user's RouteServiceProvider
-        $this->info('Saving your RouteServiceProvider...');
-        $this->helper->makeDir($pathOriginalProviders);   // make the directory if it doesn't exist
-        $this->helper->copyFile($pathProjectRouteServiceProvider, $pathOriginalRouteServiceProvider);
-        $bar->advance();
+    /**
+     * Add the 'locales' and 'skip_locales' arrays to the app config.
+     *
+     * @return void
+     */
+    private function addConfigArrays()
+    {
+        $this->info("Adding the 'locales' and 'skip_locales' arrays to config/app.php");
+        $this->helper->replaceAndSave($this->config->paths->config->app, $this->oldLocalesString, $this->newLocalesString);
+        $this->bar->advance();
+    }
 
-        // Replace the RouteServiceProvider
-        $this->info('Replacing RouteServiceProvider...');
-        $this->helper->copyFile($pathPackageRouteServiceProvider, $pathProjectRouteServiceProvider);
-        $bar->advance();
+    /**
+     * Save the project's original RouteServiceProvider.
+     *
+     * @return void
+     */
+    private function saveOriginalRouteServiceProvider()
+    {
+        $this->info('Saving the original RouteServiceProvider...');
+        $this->helper->makeDir($this->pathOriginalProviders);   // make the directory if it doesn't exist
+        $this->helper->copyFile($this->config->paths->project->RouteServiceProvider, $this->pathOriginalRouteServiceProvider);
+        $this->bar->advance();
+    }
 
-        // Add the Language middleware
-        $this->info('Adding Language middelware...');
-        $this->helper->copyFile($pathPackageLanguageMiddleware, $pathProjectLanguageMiddleware);
-        $bar->advance();
+    /**
+     * Replace the project's RouteServiceProvider.
+     *
+     * @return void
+     */
+    private function replaceRouteServiceProvider()
+    {
+        $this->info('Replacing the RouteServiceProvider...');
+        $this->helper->copyFile($this->pathPackageRouteServiceProvider, $this->config->paths->project->RouteServiceProvider);
+        $this->bar->advance();
+    }
 
-        // Add the Language middleware to the Kernel for all requests
-        $this->info('Adding Language middleware to app/Http/Kernel.php ...');
-        $this->helper->replaceAndSave($pathKernel, $oldKernelString, $newKernelString);
-        $bar->advance();
+    /**
+     * Add the Language middleware.
+     *
+     * @return void
+     */
+    private function addLanguageMiddleware()
+    {
+        $this->info('Adding the Language middelware...');
+        $this->helper->copyFile($this->pathPackageLanguageMiddleware, $this->config->paths->project->LanguageMiddleware);
+        $this->bar->advance();
+    }
 
-        // Finished adding multiple locales to your project
-        $bar->finish();
-        $this->info('Finished adding multiple locales to your project.');
+    /**
+     * Register the Language middleware in the Http/Kernel.
+     *
+     * @return void
+     */
+    private function registerLanguageMiddleware()
+    {
+        $this->info('Registering the Language middleware in Http/Kernel.php...');
+        $this->helper->replaceAndSave($this->config->paths->project->Kernel, $this->oldKernelString, $this->newKernelString);
+        $this->bar->advance();
+    }
 
+    /**
+     * Stop the progress bar.
+     *
+     * @return void
+     */
+    private function stopProgressBar()
+    {
+        $this->bar->finish();
+        $this->info('Finished adding the multiple locales package to your project.');
         $this->output->newLine(1);
     }
 }

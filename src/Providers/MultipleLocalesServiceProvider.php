@@ -1,6 +1,6 @@
 <?php
 
-namespace DidierDeMaeyer\MultipleLocales;
+namespace DidierDeMaeyer\MultipleLocales\Providers;
 
 use Illuminate\Support\ServiceProvider;
 
@@ -18,7 +18,11 @@ class MultipleLocalesServiceProvider extends ServiceProvider
      */
     public function boot()
     {
-        //
+        $this->publishes([
+            __DIR__.'/../../config/' => config_path(),
+        ], 'config');
+
+        $this->mergeConfigFrom(__DIR__.'/../../config/multiple-locales.php', 'multiple-locales');
     }
 
     /**

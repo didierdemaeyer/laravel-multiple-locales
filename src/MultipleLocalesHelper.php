@@ -40,7 +40,9 @@ class MultipleLocalesHelper
         $bar->setProgressCharacter('>');
 
         // the 'layout' of the bar
-        $bar->setFormat(' %current%/%max% [%bar%] %percent:3s%% ');
+        $bar->setFormat(' [%bar%] ');
+
+        $bar->setBarWidth(20);
 
         return $bar;
     }
@@ -63,6 +65,13 @@ class MultipleLocalesHelper
         $this->files->put($newFile, $replacing);
     }
 
+    /**
+     * @param $oldFile
+     * @param $pattern
+     * @param $replacement
+     * @param null $newFile
+     * @throws \Illuminate\Contracts\Filesystem\FileNotFoundException
+     */
     public function pregReplaceAndSave($oldFile, $pattern, $replacement, $newFile = null)
     {
         $newFile = ($newFile == null) ? $oldFile : $newFile;
@@ -82,21 +91,34 @@ class MultipleLocalesHelper
         $this->files->copy($path, $target);
     }
 
+    /**
+     * @param $path
+     * @param $target
+     */
     public function moveFile($path, $target)
     {
         $this->files->move($path, $target);
     }
 
+    /**
+     * @param $path
+     */
     public function deleteFile($path)
     {
         $this->files->delete($path);
     }
 
+    /**
+     * @param $path
+     */
     public function makeDir($path)
     {
         $this->files->makeDirectory($path);
     }
 
+    /**
+     * @param $path
+     */
     public function removeDir($path)
     {
         $this->files->deleteDirectory($path);

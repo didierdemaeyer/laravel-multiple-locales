@@ -28,10 +28,66 @@ class RemoveMultipleLocalesCommand extends Command
      */
     protected $helper;
 
+    /**
+     * @var object
+     */
+    protected $config;
+
+    /**
+     * @var object
+     */
+    private $bar;
+
+    /**
+     * @var string
+     */
+    private $pathOriginalProviders;
+
+    /**
+     * @var string
+     */
+    private $pathOriginalRouteServiceProvider;
+
+    /**
+     * @var string
+     */
+    protected $regexLocalesString = "/'locales' => \[.*],/";
+
+    /**
+     * @var string
+     */
+    protected $regexSkipLocalesString = "/'skip_locales' => \[.*],/";
+
+    /**
+     * @var string
+     */
+    protected $newLocalesString = "";
+
+    /**
+     * @var string
+     */
+    protected $newSkipLocalesString = "";
+
+    /**
+     * @var string
+     */
+    protected $oldKernelString = "
+        \\App\\Http\\Middleware\\Language::class,";
+
+    /**
+     * @var string
+     */
+    protected $newKernelString = "";
+
     public function __construct(MultipleLocalesHelper $helper)
     {
         parent::__construct();
+
         $this->helper = $helper;
+        $this->config = json_decode(json_encode(config('multiple-locales')));
+
+        $this->pathOriginalProviders = __DIR__ . '/../Providers/Original';
+        $this->pathOriginalRouteServiceProvider = __DIR__ . '/../Providers/Original/RouteServiceProvider.php';
     }
 
     /**
@@ -41,70 +97,122 @@ class RemoveMultipleLocalesCommand extends Command
      */
     public function handle()
     {
-        // Config variables
-        $pathAppConfig = getcwd() . '/config/app.php';
-        $regexLocalesString = "/'locales' => \[.*],/";
-        $newLocalesString = "";
-        $regexSkipLocalesString = "/'skip_locales' => \[.*],/";
-        $newSkipLocalesString = "";
+        // If the package is not installed, abort removal
+        if ( ! $this->packageIsInstalled()) {
+            return $this->abortRemoval();
+        }
 
-        // Providers variables
-        $pathOriginalProviders = __DIR__ . '/../Providers/Original';
-        $pathOriginalRouteServiceProvider = __DIR__ . '/../Providers/Original/RouteServiceProvider.php';
-        $pathProjectRouteServiceProvider = app_path('Providers/RouteServiceProvider.php');
+        $this->startProgressBar();
 
-        // Middleware variables
-        $pathLanguageMiddleware = app_path('Http/Middleware/Language.php');
+        $this->removeConfigArrays();
+        $this->replaceRouteServiceProvider();
+        $this->removeLanguageMiddleware();
+        $this->unregisterLanguageMiddleware();
 
-        // Kernel variables
-        $pathKernel = getcwd() . '/app/Http/Kernel.php';
-        $oldKernelString = "
-        \\App\\Http\\Middleware\\Language::class,";
-        $newKernelString = "";
+        $this->stopProgressBar();
+    }
 
-
-        // If the user does not have multiple locales installed
-        if ( ! file_exists($pathOriginalRouteServiceProvider)) {
-            $this->output->newLine(1);
-            $this->error('The multiple locales package is not installed!');
-            $this->output->newLine(1);
+    /**
+     * Check if the package is currently installed.
+     *
+     * @return bool
+     */
+    private function packageIsInstalled()
+    {
+        if (file_exists($this->pathOriginalRouteServiceProvider)) {
 
             return true;
         }
 
+        return false;
+    }
+
+    /**
+     * Abort the package removal.
+     *
+     * @return bool
+     */
+    private function abortRemoval()
+    {
+        $this->output->newLine(1);
+        $this->error('The multiple locales package is not installed!');
         $this->output->newLine(1);
 
-        // Start the progress bar
-        $bar = $this->helper->barSetup($this->output->createProgressBar(4));
-        $bar->start();
+        return true;
+    }
 
-        // Remove the 'locales' and 'skip_locales' arrays from config/app.php
-        $this->info("Removing the 'locales' and the 'skip_locales' arrays from config/app.php");
-        $this->helper->pregReplaceAndSave($pathAppConfig, $regexLocalesString, $newLocalesString);
-        $this->helper->pregReplaceAndSave($pathAppConfig, $regexSkipLocalesString, $newSkipLocalesString);
-        $bar->advance();
+    /**
+     * Start the progress bar.
+     *
+     * @return void
+     */
+    private function startProgressBar()
+    {
+        $this->output->newLine(1);
+        $this->bar = $this->helper->barSetup($this->output->createProgressBar(4));
+        $this->bar->start();
+    }
 
-        // Setting the old RouteServiceProvider
-        $this->info("Replacing the RouteServiceProvider with the old one...");
-        $this->helper->moveFile($pathOriginalRouteServiceProvider, $pathProjectRouteServiceProvider);
-        $this->helper->removeDir($pathOriginalProviders);
-        $this->helper->replaceAndSave($pathProjectRouteServiceProvider, "", "");    // without saving the RouteServiceProvider was not registered
-        $bar->advance();
+    /**
+     * Remove the 'locales' and 'skip_locales' arrays from the app config.
+     *
+     * @return void
+     */
+    private function removeConfigArrays()
+    {
+        $this->info("Removing the 'locales' and 'skip_locales' arrays from config/app.php");
+        $this->helper->pregReplaceAndSave($this->config->paths->config->app, $this->regexLocalesString, $this->newLocalesString);
+        $this->helper->pregReplaceAndSave($this->config->paths->config->app, $this->regexSkipLocalesString, $this->newSkipLocalesString);
+        $this->bar->advance();
+    }
 
-        // Delete the Language middleware
+    /**
+     * Replace the project's RouteServiceProvider.
+     *
+     * @return void
+     */
+    private function replaceRouteServiceProvider()
+    {
+        $this->info("Replacing the RouteServiceProvider...");
+        $this->helper->moveFile($this->pathOriginalRouteServiceProvider, $this->config->paths->project->RouteServiceProvider);
+        $this->helper->removeDir($this->pathOriginalProviders);
+        $this->helper->replaceAndSave($this->config->paths->project->RouteServiceProvider, "", "");    // without saving the RouteServiceProvider was not registered
+        $this->bar->advance();
+    }
+
+    /**
+     * Remove the Language middleware.
+     *
+     * @return void
+     */
+    private function removeLanguageMiddleware()
+    {
         $this->info("Removing the Language middleware...");
-        $this->helper->deleteFile($pathLanguageMiddleware);
-        $bar->advance();
+        $this->helper->deleteFile($this->config->paths->project->LanguageMiddleware);
+        $this->bar->advance();
+    }
 
-        // Remove the Language middleware from the Kernel
-        $this->info("Removing the Language middleware from the Kernel...");
-        $this->helper->replaceAndSave($pathKernel, $oldKernelString, $newKernelString);
-        $bar->advance();
+    /**
+     * Unregister the Language middleware from the Http/Kernel.
+     *
+     * @return void
+     */
+    private function unregisterLanguageMiddleware()
+    {
+        $this->info("Unregistering the Language middleware from Http/Kernel.php...");
+        $this->helper->replaceAndSave($this->config->paths->project->Kernel, $this->oldKernelString, $this->newKernelString);
+        $this->bar->advance();
+    }
 
-        // Finished removing multiple locales from your project
-        $bar->finish();
-        $this->info("Finished removing multiple locales from your project.");
-
+    /**
+     * Stop the progress bar.
+     *
+     * @return void
+     */
+    private function stopProgressBar()
+    {
+        $this->bar->finish();
+        $this->info("Finished removing the multiple locales package from your project.");
         $this->output->newLine(1);
     }
 }
