@@ -20,7 +20,7 @@ Add the package to the `'providers'` array in `config/app.php`:
 ```php
 'providers' => [
     ...
-    DidierDeMaeyer\MultipleLocales\MultipleLocalesServiceProvider::class,
+    DidierDeMaeyer\MultipleLocales\Providers\MultipleLocalesServiceProvider::class,
 ],
 ```
 
