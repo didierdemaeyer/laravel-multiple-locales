@@ -37,13 +37,14 @@ class RouteServiceProvider extends ServiceProvider
     public function map(Router $router, Request $request)
     {
         $locale = $request->segment(1);
-        $this->app->setLocale($locale);
 
         if (in_array($locale, $this->app->config->get('app.skip_locales'))) {
             $this->skippedLocaleRoutes($router);
+            $locale = $this->app->config->get('app.locale');
         } else {
             $this->localeRoutes($router, $locale);
         }
+        $this->app->setLocale($locale);
     }
 
     /**
